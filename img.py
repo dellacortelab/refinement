@@ -7,8 +7,8 @@ parser = argparse.ArgumentParser(description='Script to help with fixing periodi
 parser.add_argument('-f',help='Path to input trajectory',required=True,dest='traj_path')
 parser.add_argument('-s',help='Path to structure file',required=True,dest='struct')
 parser.add_argument('-o',help='Path to output processed trajectory to',required=True,dest='out_path')
-parser.add_argument('--keep-solvent',help='Keep solvent in trajectory. Default removes solvent',action='store_false',dest='solvent')
-parser.set_defaults(solvent=True)
+parser.add_argument('--keep-solvent',help='Keep solvent in trajectory. Default removes solvent',action='store_true',dest='solvent')
+parser.set_defaults(solvent=False)
 
 args = parser.parse_args()
 
