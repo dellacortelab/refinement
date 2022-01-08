@@ -1,8 +1,5 @@
-#Script to run RWPlus on all pdbs in openmmoutput.pdb
-#First: Run grep -v "HETATM" openmmoutput.pdb > processed.pdb
 import subprocess
 import os
-import helperfunctions as h 
 import sys
 import mdtraj as md
 import argparse
