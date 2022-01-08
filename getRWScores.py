@@ -1,6 +1,5 @@
 import subprocess
 import os
-import sys
 import mdtraj as md
 import argparse
 import shutil
@@ -11,17 +10,17 @@ parser = argparse.ArgumentParser(description='Script to calculate RWPlus scores 
 parser.add_argument('-t','--trajectory-path',help='Path to refinement trajectory to generate scores for. Should be named \'refinement_trajectory_{IDX}.dcd\', where IDX is an int.',required=True,dest='traj_path')
 parser.add_argument('-s','--structure-path',help='Path to structure file output by refinement simulation.',required=True,dest='struct_path')
 parser.add_argument('--multi-chain',help='Indicates multi chain structure. Will image molecules to fix periodic boundary conditions.',action='store_true',dest='multi')
-parser.add_argument('--rwplus',help='Path to RWPlus executable and associated *dat files. Must be specified to allow *dat files to be copied to working directory.',required=True)
+parser.add_argument('--rwplus',help='Path to directory containing RWPlus executable and associated *dat files. Must be specified to allow *dat files to be copied to working directory.',required=True)
 parser.set_defaults(multi=False)
 
 args = parser.parse_args()
 traj_path = args.traj_path
 out_path = os.path.dirname(traj_path)
-traj_idx = int(traj_path[traj_path.rfind['_']+1:traj_path.rfind('.')])
+traj_idx = int(traj_path[traj_path.rfind('_')+1:traj_path.rfind('.')])
 struct_path = args.struct_path
 multi_chain = args.multi
-rwplus_path = args.rwplus
-rw_dats_path = os.path.dirname(rwplus_path)
+rwplus_dir = args.rwplus
+rwplus_path = os.path.join(rwplus_dir,'calRWplus')
 
 current_dir = os.getcwd()
 
@@ -33,8 +32,8 @@ if multi_chain:
 print('Removing solvent')
 traj.remove_solvent(inplace=True)
 
-shutil.copy(os.path.join(rw_dats_path,'rw.dat'),current_dir)
-shutil.copy(os.path.join(rw_dats_path,'scb.dat'),current_dir)
+shutil.copy(os.path.join(rwplus_dir,'rw.dat'),current_dir)
+shutil.copy(os.path.join(rwplus_dir,'scb.dat'),current_dir)
 
 rwplus_scores = []
 rwplus_save = os.path.join(out_path,f'scorelist_{traj_idx}.txt')
@@ -51,9 +50,9 @@ for i in range(len(traj)):
         print('Saving scores.')
         with open(rwplus_save,'w') as f:
             for score in rwplus_scores:
-                f.write(score + '\n')
+                f.write(str(score) + '\n')
 print('Finished scoring frames. Performing final save.')
 with open(rwplus_save,'w') as f:
     for score in rwplus_scores:
-        f.write(score + '\n')
+        f.write(str(score) + '\n')
 print('Done.')
