@@ -51,6 +51,7 @@ for i in range(len(traj)):
         with open(rwplus_save,'w') as f:
             for score in rwplus_scores:
                 f.write(str(score) + '\n')
+os.remove(temp_path)
 print('Finished scoring frames. Performing final save.')
 with open(rwplus_save,'w') as f:
     for score in rwplus_scores:
