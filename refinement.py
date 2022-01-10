@@ -8,8 +8,6 @@ from sys import stdout
 import os
 import argparse
 
-#If no outpath, assume to be same directory as start.pdb.
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-i','--input-pdb',help='Start PDB structure path',required=True,dest='input_path')
 parser.add_argument('-o','--out-path',help='Directory to output trajectories to. Set to directory of input pdb if not specified.',dest='out_path')
@@ -24,23 +22,23 @@ parser.add_argument('-dr',help='Specify residues for strong distance restraints 
             nargs=2,type=int,dest='dist_restraint')
 
 args = parser.parse_args()
-pdbPath = args.input_path
-outPath = args.out_path
-if outPath is None:
-    outPath = os.path.dirname(os.path.abspath(pdbPath))
+pdb_path = args.input_path
+out_path = args.out_path
+if out_path is None:
+    out_path = os.path.dirname(os.path.abspath(pdb_path))
 restraints_on = args.restraints
 iteration = args.iteration
-simLength = args.length
+sim_length = args.length
 gpu_idxs = args.gpu
 gpu_string = ''
 for i in gpu_idxs:
     gpu_string += str(i)+','
 gpu_string = gpu_string[:-1]
-writeCheckpoint = args.checkpoint
+write_checkpoint = args.checkpoint
 if args.dist_restraint == None:
-    hasGap = False
+    has_gap = False
 else:
-    hasGap = True
+    has_gap = True
     res1 = args.dist_restraint[0]-1
     res2 = args.dist_restraint[1]-1
 
@@ -53,7 +51,7 @@ def save_pdb(name):
     print(f'Energy: {energy._value*KcalPerKJ:3.3f} kcal/mol')
 
 #set up system for explicit water simulation
-pdb = PDBFile(pdbPath)
+pdb = PDBFile(pdb_path)
 forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
 
 #add solvent with physiological salt concentrations
@@ -74,12 +72,12 @@ def add_restraints():
     restraint.addPerParticleParameter("y0")
     restraint.addPerParticleParameter("z0")
 
-    numRestraints = 0
+    num_restraints = 0
     for res in modeller.topology.residues():
         for atom in res.atoms():
             if atom.name == 'CA':
                 restraint.addParticle(atom.index,modeller.positions[atom.index])
-                numRestraints += 1
+                num_restraints += 1
                 break
 
     system.addForce(restraint)
@@ -92,35 +90,35 @@ if restraints_on:
 def add_dist_restraint():
     print('Adding distance restraint.')
     force = HarmonicBondForce()
-    atom1Found = False
-    atom2Found = False
+    atom1_found = False
+    atom2_found = False
     for res in modeller.topology.residues():
         if res.index == res1:
             print(f"Res1: {res.name} on chain {res.chain}")
             for atom in res.atoms():
                 if atom.name == 'CA':
                     caIdx1 = atom.index
-                    atom2Found = True
+                    atom2_found = True
                     break
         elif res.index == res2:
             print(f"Res2: {res.name} on chain {res.chain}")
             for atom in res.atoms():
                 if atom.name == 'CA':
                     caIdx2= atom.index
-                    atom2Found = True
+                    atom2_found = True
                     break
-        if atom1Found and atom2Found:
+        if atom1_found and atom2_found:
             break
     pos1 = np.array(modeller.positions[caIdx1])
     pos2 = np.array(modeller.positions[caIdx2])
-    eqDist = np.linalg.norm(pos1-pos2)
+    eq_dist = np.linalg.norm(pos1-pos2)
     #force constant, kJ/mol/nm^2
     k = 300000
-    force.addBond(caIdx1,caIdx2,eqDist,k)
+    force.addBond(caIdx1,caIdx2,eq_dist,k)
     system.addForce(force)
     print(f'Added distance restraints between CA {caIdx1} and {caIdx2}')
 
-if hasGap:
+if has_gap:
     add_dist_restraint()
 
 dt = 0.002 #ps
@@ -137,12 +135,12 @@ simulation.context.setPositions(modeller.positions)
 
 print('Start energy minimization')
 simulation.minimizeEnergy()
-save_pdb(os.path.join(outPath,"minimized_"+str(iteration)))
+save_pdb(os.path.join(out_path,"minimized_"+str(iteration)))
 print('End energy minimization')
 
 print("Generating new simulation object for NPT equilibration force")
 #get values from previous context
-oldState = simulation.context.getState(getPositions=True,getVelocities=True,enforcePeriodicBox=True)
+old_state = simulation.context.getState(getPositions=True,getVelocities=True,enforcePeriodicBox=True)
 system = forcefield.createSystem(modeller.topology, nonbondedMethod=PME,
         nonbondedCutoff=1*nanometer, constraints=HBonds)
 integrator = LangevinIntegrator(300*kelvin, 1/picosecond, dt*picoseconds)
@@ -152,7 +150,7 @@ properties = {'DeviceIndex': gpu_string, 'Precision': 'mixed'}
 #add restraint forces back in
 if restraints_on:
     add_restraints()
-if hasGap:
+if has_gap:
     add_dist_restraint()
 
 # Set up NPT equilibration
@@ -164,16 +162,16 @@ system.addForce(barostat)
 
 #generate new simulation object
 simulation = Simulation(modeller.topology, system, integrator, platform, properties)
-simulation.context.setState(oldState)
+simulation.context.setState(old_state)
 
 print("Start NPT Equilibration")
 simulation.step(250*1000) #.5ns
-save_pdb(os.path.join(outPath,"NPT_"+str(iteration)))
+save_pdb(os.path.join(out_path,"NPT_"+str(iteration)))
 print("NPT Equilibration completed")
 
 print('Generating new simulation object without NPT force')
 #get values from previous context
-oldState = simulation.context.getState(getPositions=True,getVelocities=True,enforcePeriodicBox=True)
+old_state = simulation.context.getState(getPositions=True,getVelocities=True,enforcePeriodicBox=True)
 system = forcefield.createSystem(modeller.topology, nonbondedMethod=PME,
         nonbondedCutoff=1*nanometer, constraints=HBonds)
 integrator = LangevinIntegrator(300*kelvin, 1/picosecond, dt*picoseconds)
@@ -182,26 +180,26 @@ properties = {'DeviceIndex': gpu_string, 'Precision': 'mixed'}
 #add restraint forces back in
 if restraints_on:
     add_restraints()
-if hasGap:
+if has_gap:
     add_dist_restraint()
 
 #generate new simulation object
 simulation = Simulation(modeller.topology, system, integrator, platform, properties)
-simulation.context.setState(oldState)
+simulation.context.setState(old_state)
 
 print("Start simulation with restraints", str(restraints_on))
 
 #report the # of steps taken each ns
 print(f"Divide step by {int(1/(dt*10**-3))} to get time in ns")
 simulation.reporters.append(StateDataReporter(stdout, int(1/(dt*10**-3)), step=True))
-if writeCheckpoint:
-    simulation.reporters.append(CheckpointReporter(os.path.join(outPath, f'chkpnt_{iteration}.chk'), int(5/(dt*10**-3)))) #write a checkpoint every 5 ns
+if write_checkpoint:
+    simulation.reporters.append(CheckpointReporter(os.path.join(out_path, f'chkpnt_{iteration}.chk'), int(5/(dt*10**-3)))) #write a checkpoint every 5 ns
     print("Will save a checkpoint every 5 ns")
 
 #Write out trajectory frames every 20 ps in DCD format
-simulation.reporters.append(DCDReporter(os.path.join(outPath,'refinement_trajectory_'+str(iteration)+'.dcd'), int(0.02/(dt*10**-3))))
+simulation.reporters.append(DCDReporter(os.path.join(out_path,'refinement_trajectory_'+str(iteration)+'.dcd'), int(0.02/(dt*10**-3))))
 
-simulation.step(simLength/(dt*10**-3)) #run simulation for simLength ns
+simulation.step(sim_length/(dt*10**-3)) #run simulation for sim_length ns
 print("Simulation done!")
 
-save_pdb(os.path.join(outPath,"Final_MD_"+str(iteration)))
+save_pdb(os.path.join(out_path,"Final_MD_"+str(iteration)))

@@ -6,27 +6,25 @@ from simtk.openmm.app import *
 from simtk.openmm import *
 import simtk.openmm as mm
 from simtk.unit import *
-from sys import stdout
-import time
 import sys
+import argparse
 
-restraints = True
+parser = argparse.ArgumentParser(description='Script to minimize a structure with restraints on CA and other heavy atoms')
+parser.add_argument('-s',help='Path to file to minimize',dest='struct_path',required=True)
 
-if len(sys.argv) > 1:
-    pdbPath = sys.argv[1]
-else:
-    print("Specify the path to the starting structure as argument 1") 
-    exit()
+args = parser.parse_args()
+
+pdb_path = args.struct_path
 
 def save_pdb(sim, name):
-    position = simulation.context.getState(getPositions=True).getPositions()
-    energy = simulation.context.getState(getEnergy=True).getPotentialEnergy()
-    PDBFile.writeFile(simulation.topology, position, open(name,'w'))
+    position = sim.context.getState(getPositions=True).getPositions()
+    energy = sim.context.getState(getEnergy=True).getPotentialEnergy()
+    PDBFile.writeFile(sim.topology, position, open(name,'w'))
     print('Saved file: '+name)
     print(f'Energy: {energy._value*KcalPerKJ:3.3f} kcal/mol')
 
 
-pdb = PDBFile(pdbPath)
+pdb = PDBFile(pdb_path)
 forcefield = ForceField('amber14-all.xml', 'amber14/tip3pfb.xml')
 
 modeller = Modeller(pdb.topology, pdb.positions)
@@ -67,6 +65,6 @@ simulation.context.setPositions(modeller.positions)
 print('Start energy minimization')
 simulation.minimizeEnergy()
 print('End energy minimization')
-outFile = pdbPath[:pdbPath.rfind(".")] + "_minim.pdb"
-save_pdb(simulation,outFile)
-print(f"Output final structure to {outFile}")
+out_file = pdb_path[:pdb_path.rfind(".")] + "_minim.pdb"
+save_pdb(simulation,out_file)
+print(f"Output final structure to {out_file}")
