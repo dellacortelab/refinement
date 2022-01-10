@@ -1,5 +1,4 @@
 import mdtraj as md
-import sys
 import time
 import argparse
 
