@@ -50,9 +50,3 @@ for perc in percent:
     print(f'Saving top {perc}% of frames to top_{perc}_percent.xtc')
     newtraj.save(os.path.join(dir_path,f'top_{perc}_percent.xtc'),force_overwrite=True)
     del newtraj
-
-
-#write out top x% of frames to new .xtc trajectory
-#then avg w/ gmx rmsf
-#fix sidechains w/ scwrl4
-#openmm minimize
