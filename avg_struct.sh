@@ -71,7 +71,7 @@ gmx pdb2gmx -f ${dir}/${base}_avg_scwrl.pdb -o ${dir}/${base}_avg_scwrl_prep.pdb
 1
 EOF
 
-python $script_path/finalEnergyMinim.py ${dir}/${base}_avg_scwrl_prep.pdb
+python $script_path/final_energy_minim.py ${dir}/${base}_avg_scwrl_prep.pdb
 
 if [ $? -ne 0 ]; then
     echo 'Failed to energy minimize final structure'
