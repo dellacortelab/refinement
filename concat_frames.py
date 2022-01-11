@@ -43,7 +43,7 @@ for perc in percent:
     for idx in all_trajs.keys():
         traj_best = best_frames[best_frames['traj_idx'] == idx]
         try:
-            newtraj = newtraj.join([newtraj,all_trajs[idx][list(traj_best['frame_idx'])]])
+            newtraj = newtraj.join([all_trajs[idx][list(traj_best['frame_idx'])]])
         except:
             newtraj = all_trajs[idx][list(traj_best['frame_idx'])]
         print(len(newtraj))
