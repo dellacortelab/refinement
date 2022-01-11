@@ -34,6 +34,7 @@ gpu_string = ''
 for i in gpu_idxs:
     gpu_string += str(i)+','
 gpu_string = gpu_string[:-1]
+print(f'Using GPUs: {gpu_string}')
 write_checkpoint = args.checkpoint
 if args.dist_restraint == None:
     has_gap = False
