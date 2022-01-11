@@ -78,7 +78,7 @@ if [ $? -ne 0 ]; then
     exit
 fi
 
-cp ${dir}/${base}_avg_scwrl_prep_minim.pdb ${dir}/${base}_final.pdb
+grep -v 'HETATM' ${dir}/${base}_avg_scwrl_prep_minim.pdb > ${dir}/${base}_final.pdb
 if [ $? -eq 0 ]; then
     echo "Final refined structure saved to ${dir}/${base}_final.pdb"
 fi
